@@ -1,19 +1,24 @@
-#!Perl -w
-#
-# $Id: linear-stock.pl 221 2011-10-21 21:49:52Z  $
+#!/usr/bin/perl -W
 
 use strict;
 use Date::Manip;
 use Statistics::LineFit;
 use Data::Dump qw(dump);
-#&Date_Init("setdate","PDT");
+
 my $datum = new Date::Manip::Date [ "setdate", "now,US/Pacific" ];
 
-$ARGV[0] = "" unless $ARGV[0];
-$ARGV[1] = "" unless $ARGV[1];
+# get params [-q] [N]
+if ($ARGV[0] =~ /-q/) {
+  my $quiet = -1;
+} elsif ($ARGV[0] =~ /^d+$/) {
+  my $quiet = 0
+  my $N = $ARGV[0]
+} elsif ($ARGV[1] =~ /^d+$/) {
+  my $N = $ARGV[1];
+} else {
+  my $N = 128;
+}
 
-# Number of records to read
-my $N = $ARGV[1] || 128;
 my ( $k, $in, $header );
 my ( $series, $other_series );
 my ( $date, $open, $high, $low, $close, $vol, $numdate, $x );
@@ -33,9 +38,9 @@ for ( my $k = $N - 1 ; $k >= 0 ; --$k ) {
         $date->[$k], $open->[$k],  $high->[$k],
         $low->[$k],  $close->[$k], $vol->[$k]
     ) = split( "\t", $in );
-    $x->[$k] = $k;
-    $numdate->[$k] = &UnixDate( &ParseDate( $date->[$k] ), "%s" );
-    $date->[$k] = &UnixDate( &ParseDate( $date->[$k] ), "%d-%h-%y" ); # fix date
+    $x->[$k] = $k; # save index
+    $numdate->[$k] = &UnixDate( &ParseDate( $date->[$k] ), "%s" ); # epoch
+    $date->[$k] = &UnixDate( &ParseDate( $date->[$k] ), "%d-%h-%y" ); # fix date for ecel etc
 }
 close IN;
 
@@ -50,7 +55,7 @@ foreach $data ( $low, $close, $high, $vol ) {
     next
       unless $linefit->setData( $numdate, $data )
           or die "Invalid regression data\n";
-    ( $data->[$N], $data->[ $N + 1 ] ) = $linefit->coefficients();
+    ( $data->[$N], $data->[ $N + 1 ] ) = $linefit->coefficients(); # and save them
     $data->[ $N + 2 ] = $linefit->rSquared();
     $data->[ $N + 3 ] = [ $linefit->residuals() ];
 
