@@ -9,13 +9,14 @@ my $datum = new Date::Manip::Date [ "setdate", "now,US/Pacific" ];
 
 # get params [-q] [N]
 if ($ARGV[0] =~ /-q/) {
-  my $quiet = -1;
+  my $quietflag = -1;
 } elsif ($ARGV[0] =~ /^d+$/) {
-  my $quiet = 0
+  my $quietflag = 0
   my $N = $ARGV[0]
 } elsif ($ARGV[1] =~ /^d+$/) {
   my $N = $ARGV[1];
 } else {
+ my $quietflag = 0
   my $N = 128;
 }
 
@@ -40,7 +41,7 @@ for ( my $k = $N - 1 ; $k >= 0 ; --$k ) {
     ) = split( "\t", $in );
     $x->[$k] = $k; # save index
     $numdate->[$k] = &UnixDate( &ParseDate( $date->[$k] ), "%s" ); # epoch
-    $date->[$k] = &UnixDate( &ParseDate( $date->[$k] ), "%d-%h-%y" ); # fix date for ecel etc
+    $date->[$k] = &UnixDate( &ParseDate( $date->[$k] ), "%d-%h-%y" ); # fix date for excel etc
 }
 close IN;
 
@@ -59,16 +60,16 @@ foreach $data ( $low, $close, $high, $vol ) {
     $data->[ $N + 2 ] = $linefit->rSquared();
     $data->[ $N + 3 ] = [ $linefit->residuals() ];
 
-    if ( defined $data->[$N] && $ARGV[0] ne "-q" ) {
+    if ( defined $data->[$N] && !$quietflag ) {
         print "Slope: $data->[$N+1]  Y-intercept: $data->[$N]\n ",
           "error: $data->[$N+2]", $numdate->[ $N - 1 ], " ",
           $numdate->[ $N - 1 ] * $data->[ $N + 1 ] + $data->[$N], "\n";
     }
 }
-$data = $low;
+$data = $low; #shift the line 
 my ( $llimit1, $llimit2 );
 $data->[$N] = shift_line( $data, $numdate, "down", 7 );
-if ( defined $data->[$N] && $ARGV[0] ne "-q" ) {
+if ( defined $data->[$N] && !$quietflag ) {
     print "Low Slope: $data->[$N+1]  Y-intercept: $data->[$N]\n",
       "error: $data->[$N+2] $numdate->[ $N - 1 ] \n",
       ;
@@ -83,7 +84,7 @@ if ( defined $data->[$N] ) {
 
 $data = $high;
 $data->[$N] = shift_line( $data, $numdate, "up", 14 );
-if ( defined $data->[$N] && $ARGV[0] ne "-q" ) {
+if ( defined $data->[$N] && !$quietflag ) {
     print "High Slope: $data->[$N+1]  Y-intercept: $data->[$N]\n",
       "error: $data->[$N+2] $numdate->[ $N - 1 ] \n",
       ;
